@@ -12,6 +12,6 @@ then
 fi
 
 python manage.py migrate --noinput
-gunicorn orders.wsgi:application --bind 0.0.0.0:8001 --reload
+daphne orders.asgi:application --bind 0.0.0.0 --port 8001
 
 exec "$@"

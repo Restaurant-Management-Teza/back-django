@@ -70,6 +70,17 @@ class CustomerRequestViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         instance = serializer.save()
         channel_layer = get_channel_layer()
+
+        # Prepare a dict representing the entire CustomerRequest
+        cr_data = {
+            "id": instance.id,
+            "order_id": instance.order.id,
+            "request_type": instance.request_type,
+            "note": instance.note,
+            "is_handled": instance.is_handled,
+            "created_at": str(instance.created_at),
+        }
+
         async_to_sync(channel_layer.group_send)(
             "request_watchers",
             {
@@ -77,6 +88,8 @@ class CustomerRequestViewSet(viewsets.ModelViewSet):
                 "request_id": instance.id,
                 "request_type": instance.request_type,
                 "note": instance.note or "",
+                "order_id": instance.order.id,  # Add the order ID
+                "customer_request": cr_data,  # The entire CR data
             }
         )
 
