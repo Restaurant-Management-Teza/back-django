@@ -1,0 +1,121 @@
+version: '3.9'
+
+services:
+#  api-gateway:
+#    build: ./api-gateway
+#    container_name: api-gateway
+#    ports:
+#      - "3000:8000"
+#    volumes:
+#      - ./api-gateway:/app
+#    networks:
+#      - restaurant-network
+#    depends_on:
+#      - auth-service
+#      - orders-service
+#      - admin-service
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000 --restart
+    volumes:
+      - ./auth-service:/usr/src/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=auth.settings
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    networks:
+      - restaurant-network
+
+  orders-service:
+    build:
+      context: ./orders-service
+      dockerfile: Dockerfile
+    command: daphne myproject.asgi:application --port 8001 --bind 0.0.0.0
+    container_name: orders-service
+    volumes:
+      - ./orders-service:/usr/src/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=orders.settings
+    ports:
+      - "8001:8001"
+    depends_on:
+      - db
+    networks:
+      - restaurant-network
+#
+#  admin-service:
+#    build:
+#      context: ./admin-service
+#      dockerfile: Dockerfile
+#    command: gunicorn admin_panel.wsgi:application --bind 0.0.0.0:8002
+#    container_name: admin-service
+#    volumes:
+#      - ./admin-service:/usr/src/app
+#    environment:
+#      - DJANGO_SETTINGS_MODULE=admin_panel.settings
+#    ports:
+#      - "8002:8002"
+#    depends_on:
+#      - db
+#    networks:
+#      - restaurant-network
+
+  db:
+    image: postgres:15
+    container_name: db
+    restart: always
+    environment:
+      POSTGRES_DB: restaurant
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - restaurant-network
+
+  redis:
+    image: redis:6
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - restaurant-network
+
+  nginx_load_balancer:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - orders-service
+      - auth-service
+    networks:
+      - restaurant-network
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - orders-service
+      - auth-service
+      - nginx_load_balancer
+    networks:
+      - restaurant-network
+
+volumes:
+  db-data:
+
+networks:
+  restaurant-network:
+    driver: bridge

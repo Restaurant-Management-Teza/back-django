@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>WebSocket Requests Monitor</title>
+</head>
+<body>
+    <h1>Requests Monitor</h1>
+    <div id="messages"></div>
+
+    <script>
+      // 1) Connect to your Channels endpoint
+      // Make sure the URL matches your server & route
+      // e.g. "ws://localhost:8000/ws/requests/"
+      const socket = new WebSocket("ws://localhost:8001/ws/requests/");
+
+      // 2) Connection opened
+      socket.onopen = function(e) {
+        console.log("WebSocket connected");
+      };
+
+      // 3) Listen for messages
+      socket.onmessage = function(e) {
+        // e.data is the JSON payload from 'request_broadcast'
+        const data = JSON.parse(e.data);
+        console.log("New Customer Request:", data);
+
+        // Insert a line of text into the page
+        const msgDiv = document.getElementById("messages");
+        const p = document.createElement("p");
+        p.textContent = `Request #${data.request_id}: ${data.request_type} - ${data.note}`;
+        msgDiv.appendChild(p);
+      };
+
+      // 4) Handle errors
+      socket.onerror = function(e) {
+        console.error("WebSocket error", e);
+      };
+
+      // 5) Connection closed
+      socket.onclose = function(e) {
+        console.log("WebSocket closed");
+      };
+    </script>
+</body>
+</html>
