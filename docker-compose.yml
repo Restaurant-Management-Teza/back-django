@@ -24,6 +24,12 @@ services:
       - ./auth-service:/usr/src/app
     environment:
       - DJANGO_SETTINGS_MODULE=auth.settings
+#      - SQL_ENGINE=django.db.backends.postgresql
+#      - SQL_DATABASE=restaurant
+#      - SQL_USER=user
+#      - SQL_PASSWORD=password
+#      - SQL_HOST=db
+#      - SQL_PORT=5432
     ports:
       - "8000:8000"
     depends_on:
@@ -35,12 +41,19 @@ services:
     build:
       context: ./orders-service
       dockerfile: Dockerfile
-    command: daphne myproject.asgi:application --port 8001 --bind 0.0.0.0
+#    command: daphne orders.asgi:application --port 8001 --bind 0.0.0.0
     container_name: orders-service
+    restart: always
     volumes:
       - ./orders-service:/usr/src/app
     environment:
       - DJANGO_SETTINGS_MODULE=orders.settings
+#      - SQL_ENGINE=django.db.backends.postgresql
+#      - SQL_DATABASE=restaurant1
+#      - SQL_USER=user1
+#      - SQL_PASSWORD=password
+#      - SQL_HOST=db
+#      - SQL_PORT=5432
     ports:
       - "8001:8001"
     depends_on:
@@ -88,30 +101,30 @@ services:
     networks:
       - restaurant-network
 
-  nginx_load_balancer:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
-    ports:
-      - "80:80"
-    depends_on:
-      - orders-service
-      - auth-service
-    networks:
-      - restaurant-network
+#  nginx_load_balancer:
+#    build:
+#      context: ./nginx
+#      dockerfile: Dockerfile
+#    ports:
+#      - "80:80"
+#    depends_on:
+#      - orders-service
+#      - auth-service
+#    networks:
+#      - restaurant-network
 
-  gateway:
-    build:
-      context: ./gateway
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    depends_on:
-      - orders-service
-      - auth-service
-      - nginx_load_balancer
-    networks:
-      - restaurant-network
+#  gateway:
+#    build:
+#      context: ./gateway
+#      dockerfile: Dockerfile
+#    ports:
+#      - "3000:3000"
+#    depends_on:
+#      - orders-service
+#      - auth-service
+#      - nginx_load_balancer
+#    networks:
+#      - restaurant-network
 
 volumes:
   db-data:
