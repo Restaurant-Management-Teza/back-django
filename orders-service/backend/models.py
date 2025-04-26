@@ -6,6 +6,7 @@ from django.db import models
 class MenuItem(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
+    ingredients = models.TextField(blank=True)
     price = models.DecimalField(max_digits=8, decimal_places=2)
     is_available = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -50,7 +51,7 @@ class RequestType(models.TextChoices):
 
 class CustomerRequest(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="requests")
-    request_type = models.CharField(max_length=50, choices=RequestType.choices)
+    request_type = models.TextField(blank=True, null=True)
     note = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_handled = models.BooleanField(default=False)

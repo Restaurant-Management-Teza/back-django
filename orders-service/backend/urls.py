@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     TableViewSet, SessionViewSet, MenuItemViewSet,
     OrderViewSet, CustomerRequestViewSet, OrderItemViewSet, CreateSessionWithInitialRequest, HandleCustomerRequestView,
-    OrderItemsByOrderAPI
+    OrderItemsByOrderAPI, CreateOrderItemByTableAPI
 )
 
 router = DefaultRouter()
@@ -21,4 +21,6 @@ urlpatterns = [
     path('create-session/', CreateSessionWithInitialRequest.as_view(), name='create-session'),
     path('handle-request/<int:request_id>/', HandleCustomerRequestView.as_view(), name='handle-customer-request'),
     path('order-items-by-order/<int:order_id>/', OrderItemsByOrderAPI.as_view(), name='orderitems-by-order'),
+    path('tables/<int:table_id>/add-item/', CreateOrderItemByTableAPI.as_view(), name='add-item-to-table'),
+
 ]

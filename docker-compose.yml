@@ -19,7 +19,8 @@ services:
     build:
       context: ./auth-service
       dockerfile: Dockerfile
-    command: python manage.py runserver 0.0.0.0:8000 --restart
+#    command: python manage.py runserver 0.0.0.0:8000 --restart
+    command: gunicorn auth.wsgi:application --bind 0.0.0.0:8000 --reload
     volumes:
       - ./auth-service:/usr/src/app
     environment:
@@ -41,7 +42,9 @@ services:
     build:
       context: ./orders-service
       dockerfile: Dockerfile
-#    command: daphne orders.asgi:application --port 8001 --bind 0.0.0.0
+      # start the server with socket
+    command: daphne orders.asgi:application --port 8001 --bind 0.0.0.0
+#    command: gunicorn orders.wsgi:application --bind 0.0.0.0:8001 --reload
     container_name: orders-service
     restart: always
     volumes:

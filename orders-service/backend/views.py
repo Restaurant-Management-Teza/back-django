@@ -9,7 +9,7 @@ from asgiref.sync import async_to_sync
 
 from .models import (
     Table, Session, MenuItem, Order,
-    CustomerRequest, OrderItem
+    CustomerRequest, OrderItem, RequestType
 )
 from .serializers import (
     TableSerializer, SessionSerializer, MenuItemSerializer,
@@ -23,7 +23,7 @@ class MenuItemViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
 
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['name', 'description']
+    search_fields = ['name', 'description', 'ingredients']
     ordering_fields = ['price', 'created_at', 'name']
 
 
@@ -43,6 +43,8 @@ class OrderViewSet(viewsets.ModelViewSet):
 
 
 class OrderItemsByOrderAPI(APIView):
+    ordering_fields = ['price', 'quantity', 'name']
+    ordering = ['added_at']
     def get(self, request, order_id):
         get_object_or_404(Order, id=order_id)
         items = OrderItem.objects.filter(order_id=order_id)
@@ -142,5 +144,37 @@ class HandleCustomerRequestView(APIView):
         customer_request.is_handled = True
         customer_request.save()
 
+        if customer_request.request_type == RequestType.PAYMENT:
+            order = customer_request.order
+            session = order.session
+
+            order.is_completed = True
+            order.save()
+
+            session.is_active = False
+            session.save()
+
         return Response({"message": f"Request {request_id} marked as handled."}, status=status.HTTP_200_OK)
+
+
+class CreateOrderItemByTableAPI(APIView):
+    def post(self, request, table_id):
+        menu_item_id = request.data.get('menu_item_id')
+        quantity = request.data.get('quantity', 1)
+
+        table = get_object_or_404(Table, id=table_id)
+
+        session = table.sessions.filter(is_active=True).first()
+        if not session:
+            return Response({"detail": "No active session for this table."}, status=status.HTTP_400_BAD_REQUEST)
+
+        order = session.orders.filter(is_completed=False).first()
+        if not order:
+            order = Order.objects.create(session=session, is_approved=True)
+
+        menu_item = get_object_or_404(MenuItem, id=menu_item_id)
+        order_item = OrderItem.objects.create(order=order, menu_item=menu_item, quantity=quantity)
+
+        serializer = OrderItemSerializer(order_item)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 

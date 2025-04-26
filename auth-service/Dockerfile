@@ -27,5 +27,5 @@ COPY . .
 COPY .env.dev .env.dev
 
 # run entrypoint.sh
-ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
+#ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
 
