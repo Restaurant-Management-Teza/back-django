@@ -54,10 +54,14 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class CustomerRequestSerializer(serializers.ModelSerializer):
     order_id = serializers.IntegerField(write_only=True)
+    tabel_id = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomerRequest
-        fields = ['id', 'order_id', 'request_type', 'note', 'is_handled', 'created_at']
+        fields = ['id', 'order_id', 'request_type', 'note', 'is_handled', 'created_at', 'tabel_id']
+
+    def get_tabel_id(self, obj):
+        return obj.order.session.table.id if obj.order and obj.order.session and obj.order.session.table else None
 
     def validate_order_id(self, value):
         try:
