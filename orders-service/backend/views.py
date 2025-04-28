@@ -90,8 +90,9 @@ class CustomerRequestViewSet(viewsets.ModelViewSet):
                 "request_id": instance.id,
                 "request_type": instance.request_type,
                 "note": instance.note or "",
-                "order_id": instance.order.id,  # Add the order ID
-                "customer_request": cr_data,  # The entire CR data
+                "order_id": instance.order.id,
+                "customer_request": cr_data,
+                "table_id": instance.order.session.table.id if instance.order else None,
             }
         )
 

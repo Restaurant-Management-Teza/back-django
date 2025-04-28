@@ -34,7 +34,8 @@ class RequestMonitorConsumer(AsyncWebsocketConsumer):
             "request_type": event.get("request_type"),
             "note": event.get("note", ""),
             "order_id": event.get("order_id"),
-            "customer_request": event.get("customer_request", {})
+            "customer_request": event.get("customer_request", {}),
+            "table_id": event.get("table_id"),
         }
 
         # Send JSON back to the client

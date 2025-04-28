@@ -35,10 +35,12 @@ class SessionSerializer(serializers.ModelSerializer):
 class OrderItemSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='menu_item.name', read_only=True)
     price = serializers.DecimalField(source='menu_item.price', max_digits=8, decimal_places=2, read_only=True)
+    menu_item = serializers.PrimaryKeyRelatedField(queryset=MenuItem.objects.all(), write_only=True)
+    order = serializers.PrimaryKeyRelatedField(queryset=Order.objects.all(), write_only=True)
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'quantity', 'name', 'price']
+        fields = ['id', 'order', 'menu_item', 'quantity', 'name', 'price']
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)

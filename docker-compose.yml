@@ -82,7 +82,7 @@ services:
 #      - restaurant-network
 
   db:
-    image: postgres:15
+    image: bitnami/postgresql:latest
     container_name: db
     restart: always
     environment:
