@@ -40,13 +40,20 @@ INSTALLED_APPS = [
     "backend",
     "rest_framework",
     'django_filters',
+    'rest_framework.authtoken',
 ]
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated'
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
     ]
 }
+
+# AUTH_USER_MODEL = 'backend.DefaultUser'
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

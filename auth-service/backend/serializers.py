@@ -1,41 +1,25 @@
+# serializers.py
+from django.contrib.auth.models import User
 from rest_framework import serializers
-from .models import DefaultUser, UserType
 
 class UserSerializer(serializers.ModelSerializer):
-    """
-    Serializes the DefaultUser model for CRUD operations.
-    By default, password here is plain text. If you want to hash it,
-    do so in create/update or in your model manager.
-    """
+    user_type = serializers.ChoiceField(choices=["WAITER", "MANAGER", "CUSTOMER"], write_only=True)
+
     class Meta:
-        model = DefaultUser
-        fields = [
-            'id',
-            'username',
-            'email',
-            'password',
-            'full_name',
-            'user_type',
-            'is_active',
-            'is_staff',
-        ]
-        read_only_fields = ['id']
+        model = User
+        fields = ['username', 'email', 'password', 'user_type']
+        extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
-        """
-        Optionally hash the password here or rely on model manager.
-        """
-        password = validated_data.pop('password', None)
-        instance = super().create(validated_data)
-        if password:
-            instance.password = password  # or hash it
-            instance.save()
-        return instance
+        user_type = validated_data.pop('user_type')
+        password = validated_data.pop('password')
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
 
-    def update(self, instance, validated_data):
-        password = validated_data.pop('password', None)
-        instance = super().update(instance, validated_data)
-        if password:
-            instance.password = password  # or hash it
-            instance.save()
-        return instance
+        # Assign to group
+        from django.contrib.auth.models import Group
+        group, _ = Group.objects.get_or_create(name=user_type.upper())
+        user.groups.add(group)
+
+        return user
