@@ -66,16 +66,11 @@ app.use('/api/v1/health_wds', createProxyMiddleware({
     changeOrigin: true,
 }));
 
-// // Proxy for User Alert Service
-// app.use('/api/v1/health_uas', createProxyMiddleware({
-//     target: 'http://django-user-alert-service:8001',
-//     changeOrigin: true,
-// }));
 
-app.use('/api/v1/current-weather', cacheMiddleware, async (req, res) => {
+app.use('/api/v1/orders-service', cacheMiddleware, async (req, res) => {
     const cacheKey = req.originalUrl;
     try {
-        const response = await axios.get('http://django-user-alert-service:8001' + req.originalUrl);
+        const response = await axios.get('http://django-orders-service:8001' + req.originalUrl);
         if (response.status === 200) {
             await cluster.set(cacheKey, JSON.stringify(response.data), 'EX', 60);
             res.status(200).json(response.data);
@@ -95,10 +90,10 @@ app.use('/api/v1/current-weather', cacheMiddleware, async (req, res) => {
 
 
 
-app.use('/api/v1/weather-prediction', cacheMiddleware, async (req, res) => {
+app.use('/api/v1/admin-service', cacheMiddleware, async (req, res) => {
     const cacheKey = req.originalUrl;
     try {
-        const response = await axios.get('http://django-user-alert-service:8001' + req.originalUrl);
+        const response = await axios.get('http://django-admin-service:8001' + req.originalUrl);
         if (response.status === 200) {
             await cluster.set(cacheKey, JSON.stringify(response.data), 'EX', 60);
             res.status(200).json(response.data);

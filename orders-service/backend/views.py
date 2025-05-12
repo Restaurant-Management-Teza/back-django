@@ -41,6 +41,22 @@ class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
+class GetOrderByTableIdAPI(APIView):
+    def get(self, request, table_id):
+        table = get_object_or_404(Table, id=table_id)
+
+        # Get active session
+        session = table.sessions.filter(is_active=True).first()
+        if not session:
+            return Response({"detail": "No active session found for this table."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Get first active (not completed) order
+        order = session.orders.filter(is_completed=False).first()
+        if not order:
+            return Response({"detail": "No active order found for this table."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = OrderSerializer(order)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class OrderItemsByOrderAPI(APIView):
     ordering_fields = ['price', 'quantity', 'name']
