@@ -48,10 +48,16 @@ class OrderSerializer(serializers.ModelSerializer):
         queryset=Session.objects.all(),
         source='session',
     )
+    table_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
-        fields = ['id', 'session_id', 'is_approved', 'is_completed', 'created_at', 'items']
+        fields = ['id', 'session_id', 'table_id', 'is_approved', 'is_completed', 'created_at', 'items']
+
+    def get_table_id(self, obj):
+        if obj.session and obj.session.table:
+            return obj.session.table.id
+        return None
 
 
 class CustomerRequestSerializer(serializers.ModelSerializer):
