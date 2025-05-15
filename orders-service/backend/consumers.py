@@ -1,4 +1,6 @@
 import json
+from urllib.parse import parse_qs
+
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 class RequestMonitorConsumer(AsyncWebsocketConsumer):
@@ -40,3 +42,33 @@ class RequestMonitorConsumer(AsyncWebsocketConsumer):
 
         # Send JSON back to the client
         await self.send(text_data=json.dumps(data))
+
+class ZoneRequestConsumer(AsyncWebsocketConsumer):
+    """
+    Waiter endpoint
+    ───────────────
+    • Client must connect with ?zone_id=<id>
+    • Joins group 'zone_<id>'
+    • Will reject the socket if zone_id is missing.
+    """
+
+    async def connect(self):
+        qs = parse_qs(self.scope["query_string"].decode())
+        self.zone_id = qs.get("zone_id", [None])[0]
+
+        if not self.zone_id:
+            # no zone_id provided → reject connection
+            await self.close()
+            return
+
+        self.group_name = f"zone_{self.zone_id}"
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, code):
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    # Handler for messages coming from group_send
+    async def request_broadcast(self, event):
+        # Optionally, you could strip fields here before sending
+        await self.send(text_data=json.dumps(event))

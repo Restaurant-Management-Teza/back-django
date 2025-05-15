@@ -15,9 +15,18 @@ class MenuItem(models.Model):
         return self.name
 
 
+# models.py
+class Zone(models.Model):
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
+
 class Table(models.Model):
     number = models.PositiveIntegerField(unique=True)
     seats = models.PositiveIntegerField(default=4)
+    zone = models.ForeignKey(Zone, on_delete=models.CASCADE, related_name='tables', null=True, blank=True)
 
     def __str__(self):
         return f"Table {self.number}"

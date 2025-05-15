@@ -89,28 +89,38 @@ class CustomerRequestViewSet(viewsets.ModelViewSet):
         instance = serializer.save()
         channel_layer = get_channel_layer()
 
-        # Prepare a dict representing the entire CustomerRequest
-        cr_data = {
-            "id": instance.id,
-            "order_id": instance.order.id,
-            "request_type": instance.request_type,
-            "note": instance.note,
-            "is_handled": instance.is_handled,
-            "created_at": str(instance.created_at),
-        }
+        # ─── determine zone ───────────────────────────────────────────
+        table   = instance.order.session.table
+        zone_obj = getattr(table, "zone", None)           # FK - or - None
+        zone_id  = zone_obj.id if zone_obj else getattr(table, "zone_id", None)
+        # ──────────────────────────────────────────────────────────────
 
-        async_to_sync(channel_layer.group_send)(
-            "request_watchers",
-            {
-                "type": "request_broadcast",
-                "request_id": instance.id,
+        # ─── build one payload to reuse ───────────────────────────────
+        payload = {
+            "type":            "request_broadcast",
+            "request_id":      instance.id,
+            "request_type":    instance.request_type,
+            "note":            instance.note or "",
+            "order_id":        instance.order.id,
+            "table_id":        table.id,
+            "zone_id":         zone_id,
+            "customer_request": {
+                "id":           instance.id,
+                "order_id":     instance.order.id,
                 "request_type": instance.request_type,
-                "note": instance.note or "",
-                "order_id": instance.order.id,
-                "customer_request": cr_data,
-                "table_id": instance.order.session.table.id if instance.order else None,
-            }
-        )
+                "note":         instance.note,
+                "is_handled":   instance.is_handled,
+                "created_at":   instance.created_at.isoformat(),
+            },
+        }
+        # ──────────────────────────────────────────────────────────────
+
+        # ▶ 1) zone-specific broadcast (waiters)
+        if zone_id is not None:
+            async_to_sync(channel_layer.group_send)(f"zone_{zone_id}", payload)
+
+        # ▶ 2) global broadcast (managers)
+        async_to_sync(channel_layer.group_send)("request_watchers", payload)
 
 class CreateSessionWithInitialRequest(APIView):
     serializer_class = SessionInitRequestSerializer
