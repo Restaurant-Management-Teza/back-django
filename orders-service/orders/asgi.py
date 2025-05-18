@@ -5,7 +5,7 @@ from channels.auth import AuthMiddlewareStack
 from django.core.asgi import get_asgi_application
 import backend.routing
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'orders.settings')
 django.setup()
 
 # Traditional Django HTTP
