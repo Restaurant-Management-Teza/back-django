@@ -62,6 +62,7 @@ class UserFullList(generics.ListAPIView):
         User.objects
             .all()
             .prefetch_related("groups", "waiter_profile")  # one DB hit
+            .filter(groups__name="WAITER")  # <- keep only waiters
     )
     serializer_class  = UserFullSerializer
 
