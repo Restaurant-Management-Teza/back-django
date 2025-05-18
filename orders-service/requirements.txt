@@ -14,3 +14,6 @@ channels-redis>=4.0
 redis==4.6.0
 daphne
 uvicorn
+celery>=5.3
+numpy>=1.26
+pandas>=2.1

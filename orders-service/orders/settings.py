@@ -56,6 +56,14 @@ CHANNEL_LAYERS = {
   },
 }
 
+CELERY_BROKER_URL = "redis://redis:6379/0"   # same Redis you use for Channels
+CELERY_BEAT_SCHEDULE = {
+    "refresh-etas-every-60s": {
+        "task": "backend.tasks.refresh_etas",
+        "schedule": 60.0,
+    },
+}
+
 REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': [
         'rest_framework.filters.SearchFilter',

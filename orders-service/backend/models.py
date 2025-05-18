@@ -3,7 +3,10 @@ import uuid
 
 from django.db import models
 
+
 class MenuItem(models.Model):
+    public_id      = models.UUIDField(null=True)
+    cook_time_min  = models.PositiveIntegerField(null=True)   # <- changed
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     ingredients = models.TextField(blank=True)
@@ -77,3 +80,34 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.menu_item.name} x{self.quantity}"
+
+# backend/models.py  (new file or extend existing)
+class KitchenEvent(models.Model):
+    """
+    One row per dish actually cooked.
+    We’ll learn ETA from Δt = finished_at – started_at.
+    """
+    order_item  = models.OneToOneField('OrderItem', on_delete=models.CASCADE)
+    started_at  = models.DateTimeField(auto_now_add=True)            # set when ticket prints
+    finished_at = models.DateTimeField(null=True, blank=True)        # set when chef clicks "ready"
+
+class KitchenEvents(models.Model):
+    """
+    One row per dish that the kitchen must prepare.
+    """
+    EVENT_CHOICES = [
+        ("queued", "Queued"),          # just added
+        ("cooking", "Cooking"),        # chef has started
+        ("ready",   "Ready"),          # finished
+    ]
+
+    order_item        = models.ForeignKey("OrderItem", on_delete=models.CASCADE,
+                                          related_name="kitchen_events")
+    status            = models.CharField(max_length=10, choices=EVENT_CHOICES, default="queued")
+    queued_at         = models.DateTimeField(auto_now_add=True)
+    eta_finish_at     = models.DateTimeField()            # <- filled by estimator
+    started_at        = models.DateTimeField(null=True, blank=True)
+    finished_at       = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["eta_finish_at"]

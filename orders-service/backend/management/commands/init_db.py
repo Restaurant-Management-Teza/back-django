@@ -22,9 +22,7 @@ class Command(BaseCommand):
             item, created = MenuItem.objects.get_or_create(
                 name=data['name'],
                 defaults={
-                    'description': data['description'],
-                    'price': data['price'],
-                    'is_available': True
+                    'description': data['description'], 'price': data['price'],'is_available': True,
                 }
             )
             menu_items.append(item)

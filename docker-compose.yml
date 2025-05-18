@@ -104,6 +104,24 @@ services:
     networks:
       - restaurant-network
 
+  celery:
+    build: ./orders-service
+    command: celery -A orders worker -l info
+    depends_on:
+      - redis
+      - orders-service
+    networks:
+      - restaurant-network
+
+  celery-beat:
+    build: ./orders-service
+    command: celery -A orders beat -l info
+    depends_on:
+      - redis
+      - orders-service
+    networks:
+      - restaurant-network
+
 #  nginx_load_balancer:
 #    build:
 #      context: ./nginx

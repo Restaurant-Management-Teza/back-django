@@ -1,4 +1,6 @@
 # serializers.py
+import math
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -49,15 +51,25 @@ class OrderSerializer(serializers.ModelSerializer):
         source='session',
     )
     table_id = serializers.SerializerMethodField()
+    eta_minutes = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
-        fields = ['id', 'session_id', 'table_id', 'is_approved', 'is_completed', 'created_at', 'items']
+        fields = ['id', 'session_id', 'table_id', 'is_approved', 'is_completed', 'created_at', 'items', 'eta_minutes']
 
     def get_table_id(self, obj):
         if obj.session and obj.session.table:
             return obj.session.table.id
         return None
+
+    def get_eta_minutes(self, obj):
+        evts = obj.items.values_list("kitchen_events__eta_finish_at", flat=True)
+        evts = [e for e in evts if e]
+        if not evts:
+            return None
+        eta_dt  = max(evts)
+        minutes = math.ceil((eta_dt - timezone.now()).total_seconds() / 60)
+        return max(0, minutes)
 
 
 class CustomerRequestSerializer(serializers.ModelSerializer):

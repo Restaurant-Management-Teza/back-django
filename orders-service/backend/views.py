@@ -1,6 +1,8 @@
 # views.py
+import math                         # ← add this
+from django.utils import timezone   # good habit for tz-aware “now”
+import math
 from rest_framework import viewsets, filters, status
-from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -9,7 +11,7 @@ from asgiref.sync import async_to_sync
 
 from .models import (
     Table, Session, MenuItem, Order,
-    CustomerRequest, OrderItem, RequestType, Zone
+    CustomerRequest, OrderItem, RequestType, Zone, KitchenEvents
 )
 from .serializers import (
     TableSerializer, SessionSerializer, MenuItemSerializer,
@@ -105,12 +107,16 @@ class OrderItemViewSet(viewsets.ModelViewSet):
     serializer_class = OrderItemSerializer
 
     def perform_create(self, serializer):
-        # If order ID is expected to come from somewhere else (e.g., cookie or session), do this:
-        # order_id = self.request.COOKIES.get('order_id')
-        # order = get_object_or_404(Order, pk=order_id)
+        order_item = serializer.save()
 
-        # Or just make sure it’s passed in validated_data
-        serializer.save()
+        from backend.utils.eta import simple_eta
+
+        eta = simple_eta(order_item.menu_item)
+
+        KitchenEvents.objects.create(
+            order_item   = order_item,
+            eta_finish_at = eta,
+        )
 
 
 class CustomerRequestViewSet(viewsets.ModelViewSet):
@@ -236,4 +242,23 @@ class CreateOrderItemByTableAPI(APIView):
 
         serializer = OrderItemSerializer(order_item)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class OrderETAAPIView(APIView):
+    """
+    GET /v1/api/orders/{order_id}/eta/  ->  {"eta_minutes": 17}
+    """
+    def get(self, request, order_id):
+        order = get_object_or_404(Order, id=order_id)
+
+        # collect all eta datetimes for dishes in this order
+        evts = order.items.values_list("kitchen_events__eta_finish_at", flat=True)
+        evts = [e for e in evts if e]          # drop NULLs / None
+
+        if not evts:
+            return Response({"eta_minutes": None})
+
+        eta_dt  = max(evts)                    # longest dish drives the order
+        minutes = math.ceil((eta_dt - timezone.now()).total_seconds() / 60)
+
+        return Response({"eta_minutes": max(0, minutes)})
 
