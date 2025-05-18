@@ -9,7 +9,7 @@ from asgiref.sync import async_to_sync
 
 from .models import (
     Table, Session, MenuItem, Order,
-    CustomerRequest, OrderItem, RequestType
+    CustomerRequest, OrderItem, RequestType, Zone
 )
 from .serializers import (
     TableSerializer, SessionSerializer, MenuItemSerializer,
@@ -57,6 +57,38 @@ class GetOrderByTableIdAPI(APIView):
 
         serializer = OrderSerializer(order)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class GetOrdersByZoneAPI(APIView):
+    """
+    GET /v1/api/zones/<zone_id>/orders/
+
+    • Looks up the zone.
+    • Finds every *unfinished* order that belongs to a table in that zone
+      (session → table → zone).
+    • Returns a list (could be empty) serialized with OrderSerializer.
+    """
+    def get(self, request, zone_id):
+        # 1️⃣  does the zone exist?
+        zone = get_object_or_404(Zone, id=zone_id)
+
+        # 2️⃣  all open orders inside this zone
+        open_orders = (
+            Order.objects
+                 .filter(is_completed=False,
+                         session__table__zone=zone)   # session → table → zone
+                 .select_related('session', 'session__table')  # SQL efficiency
+                 .prefetch_related('items', 'items__menu_item')
+        )
+
+        if not open_orders.exists():
+            return Response(
+                {"detail": "No active orders found in this zone."},
+                status=status.HTTP_204_NO_CONTENT,        # 204 = empty but ok
+            )
+
+        serializer = OrderSerializer(open_orders, many=True, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class OrderItemsByOrderAPI(APIView):
     ordering_fields = ['price', 'quantity', 'name']
