@@ -55,11 +55,13 @@ class ZoneRequestConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         qs = parse_qs(self.scope["query_string"].decode())
         self.zone_id = qs.get("zone_id", [None])[0]
-
         if not self.zone_id:
-            # no zone_id provided → reject connection
-            await self.close()
-            return
+            self.zone_id = 1
+
+        # if not self.zone_id:
+        #     # no zone_id provided → reject connection
+        #     await self.close()
+        #     return
 
         self.group_name = f"zone_{self.zone_id}"
         await self.channel_layer.group_add(self.group_name, self.channel_name)
