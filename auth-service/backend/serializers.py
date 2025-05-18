@@ -51,4 +51,4 @@ class UserFullSerializer(serializers.ModelSerializer):
 
 
 class ZoneUpdateSerializer(serializers.Serializer):
-    zone = serializers.IntegerField(min_value=1)   # positive int
+    zone = serializers.IntegerField(min_value=1, allow_null=True)
