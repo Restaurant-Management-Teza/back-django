@@ -219,6 +219,7 @@ class HandleCustomerRequestView(APIView):
             session.is_active = False
             session.save()
 
+
         return Response({"message": f"Request {request_id} marked as handled."}, status=status.HTTP_200_OK)
 
 
@@ -239,6 +240,15 @@ class CreateOrderItemByTableAPI(APIView):
 
         menu_item = get_object_or_404(MenuItem, id=menu_item_id)
         order_item = OrderItem.objects.create(order=order, menu_item=menu_item, quantity=quantity)
+
+        from backend.utils.eta import simple_eta
+
+        eta = simple_eta(order_item.menu_item)
+
+        KitchenEvents.objects.create(
+            order_item=order_item,
+            eta_finish_at=eta,
+        )
 
         serializer = OrderItemSerializer(order_item)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
